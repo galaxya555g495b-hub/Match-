@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Match- | AI Eğitmen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand__logo">M</div>
+          <div>
+            <p class="brand__name">Match-</p>
+            <p class="brand__tag">TR + EN AI Tutor</p>
+          </div>
+        </div>
+
+        <section class="sidebar-card">
+          <h2>Kapsam</h2>
+          <p>Dersler ve meslek alanları (örnek):</p>
+          <div class="chips" id="scopeChips"></div>
+        </section>
+
+        <section class="sidebar-card" id="profilePreview" hidden>
+          <h2>Aktif Oturum</h2>
+          <div id="profilePreviewContent"></div>
+        </section>
+      </aside>
+
+      <main class="chat-shell">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Kişisel AI Eğitmenin</p>
+            <h1>Match- Sohbet</h1>
+          </div>
+          <div class="topbar__pill">Türkçe + English</div>
+        </header>
+
+        <section class="chat-area" id="chatArea">
+          <article class="message message--assistant">
+            <p>
+              👋 <strong>Uygulamaya başlamadan önce senin hakkında kısa bilgi alabilir miyim?</strong>
+            </p>
+            <p class="muted">
+              I can personalize your lessons after a short onboarding.
+            </p>
+          </article>
+
+          <article class="message message--assistant onboarding-card">
+            <h2>Tanışma Formu</h2>
+            <form id="profileForm" class="profile-form">
+              <label>
+                Adın
+                <input type="text" name="name" placeholder="Örn: Ayşe" required />
+              </label>
+
+              <div class="grid two">
+                <label>
+                  Yaş
+                  <input type="number" name="age" min="7" max="99" placeholder="16" required />
+                </label>
+                <label>
+                  Sınıf / Seviye
+                  <input type="text" name="grade" placeholder="10. sınıf / TYT" required />
+                </label>
+              </div>
+
+              <label>
+                Zorlandığın Dersler
+                <input type="text" name="struggles" placeholder="Matematik, Fizik" required />
+              </label>
+
+              <label>
+                Kullanım Amacı
+                <textarea
+                  name="goal"
+                  rows="3"
+                  placeholder="YKS, okul notu, meslek hazırlığı..."
+                  required
+                ></textarea>
+              </label>
+
+              <label>
+                Günlük Çalışma Süresi (opsiyonel)
+                <input type="text" name="studyTime" placeholder="90 dakika" />
+              </label>
+
+              <button type="submit">Profili Kaydet</button>
+            </form>
+          </article>
+        </section>
+
+        <footer class="composer">
+          <div class="quick-prompts">
+            <button type="button" class="prompt-chip">Dersleri listele</button>
+            <button type="button" class="prompt-chip">Meslekleri listele</button>
+            <button type="button" class="prompt-chip">Cevabı göster</button>
+          </div>
+          <div class="composer__input">
+            <input
+              id="chatInput"
+              type="text"
+              placeholder="Mesajını yaz... (Profil kaydedildikten sonra sohbet başlar)"
+            />
+            <button id="sendBtn" type="button">Gönder</button>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -243,6 +243,10 @@ function normalizeText(text) {
 
 
 
+function containsAny(text, patterns) {
+  return patterns.some((pattern) => text.includes(pattern));
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll('&', '&amp;')
@@ -711,19 +715,19 @@ function getSmartResponse(message) {
 
   const normalized = normalizeText(message);
 
-  if (normalized.includes('su ana kadar ne yaptik') || normalized.includes('şu ana kadar ne yaptık') || normalized.includes('ozet gec') || normalized.includes('özet geç')) {
+  if (containsAny(normalized, ['su ana kadar ne yaptik', 'ozet gec'])) {
     return createSessionRecapCard();
   }
 
-  if (normalized.includes('yardim') || normalized.includes('yardım') || normalized.includes('help')) {
+  if (containsAny(normalized, ['yardim', 'help'])) {
     return getHelpCard();
   }
 
-  if (normalized.includes('haftalik plan') || normalized.includes('haftalık plan') || normalized.includes('calisma plani') || normalized.includes('çalışma planı')) {
+  if (containsAny(normalized, ['haftalik plan', 'calisma plani'])) {
     return createWeeklyPlan(loadProfile());
   }
 
-  if (normalized.includes('profilimi goster') || normalized.includes('profilimi göster')) {
+  if (containsAny(normalized, ['profilimi goster'])) {
     const profile = loadProfile();
     if (!profile) return '<p class="muted">Aktif profil bulunamadı. Lütfen önce tanışma formunu doldur.</p>';
     return `
@@ -734,7 +738,7 @@ function getSmartResponse(message) {
     `;
   }
 
-  if (normalized.includes('oturumu sifirla') || normalized.includes('oturumu sıfırla')) {
+  if (containsAny(normalized, ['oturumu sifirla'])) {
     sessionStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(VOCAB_PROGRESS_KEY);
     sessionStorage.removeItem(DAILY_TASKS_KEY);
@@ -769,27 +773,23 @@ function getSmartResponse(message) {
     return formatVocabularyCard(pickVocabularyItems(10), 'Türkçe Kelime Dağarcığı - Geniş Paket');
   }
 
-  if (
-    normalized.includes('ileri seviye kelime') ||
-    normalized.includes('zor kelime') ||
-    normalized.includes('akademik kelime')
-  ) {
-    return formatVocabularyCard(pickVocabularyItems(6), 'İleri Seviye Türkçe Kelimeler');
-  }
-
-  if (normalized.includes('sıradaki kelime') || normalized.includes('siradaki kelime') || normalized.includes('tek kelime')) {
-    return formatVocabularyCard(pickVocabularyItems(1), 'Sıradaki Kelime');
-  }
-
-  if (normalized.includes('kelime durumu') || normalized.includes('kelime ilerleme')) {
-    return getVocabStatusCard();
-  }
-
-  if (normalized.includes('zor kelimeleri tekrar et') || normalized.includes('zayif kelime') || normalized.includes('zayıf kelime')) {
+  if (containsAny(normalized, ['zor kelimeleri tekrar et', 'zayif kelime'])) {
     return formatWeakVocabularyCard();
   }
 
-  if (normalized.includes('kelime sifirla') || normalized.includes('kelime sıfırla')) {
+  if (containsAny(normalized, ['ileri seviye kelime', 'akademik kelime'])) {
+    return formatVocabularyCard(pickVocabularyItems(6), 'İleri Seviye Türkçe Kelimeler');
+  }
+
+  if (containsAny(normalized, ['siradaki kelime', 'tek kelime'])) {
+    return formatVocabularyCard(pickVocabularyItems(1), 'Sıradaki Kelime');
+  }
+
+  if (containsAny(normalized, ['kelime durumu', 'kelime ilerleme'])) {
+    return getVocabStatusCard();
+  }
+
+  if (containsAny(normalized, ['kelime sifirla'])) {
     vocabProgress = createInitialVocabProgress();
     lastVocabularyWord = '';
     saveVocabProgress();
@@ -797,7 +797,7 @@ function getSmartResponse(message) {
     return '<p><strong>Kelime ilerlemesi sıfırlandı.</strong></p><p class="muted">Yeniden başlamak için: <strong>10 kelime ver</strong></p>';
   }
 
-  if (normalized.includes('dogru') || normalized.includes('bildim')) {
+  if (containsAny(normalized, ['dogru', 'bildim'])) {
     const lastItem = vocabularyDeck.find((item) => item.word === lastVocabularyWord);
     if (lastItem && vocabProgress[lastItem.word]) {
       vocabProgress[lastItem.word].correct += 1;
@@ -808,7 +808,7 @@ function getSmartResponse(message) {
     return '<p class="muted">Önce bir kelime açalım. Komut: <strong>sıradaki kelime</strong></p>';
   }
 
-  if (normalized.includes('yanlis') || normalized.includes('bilemedim')) {
+  if (containsAny(normalized, ['yanlis', 'bilemedim'])) {
     const lastItem = vocabularyDeck.find((item) => item.word === lastVocabularyWord);
     if (lastItem && vocabProgress[lastItem.word]) {
       vocabProgress[lastItem.word].wrong += 1;
@@ -819,11 +819,11 @@ function getSmartResponse(message) {
     return '<p class="muted">Önce bir kelime açalım. Komut: <strong>sıradaki kelime</strong></p>';
   }
 
-  if (normalized.includes('kelime testi') || normalized.includes('kelime quiz')) {
+  if (containsAny(normalized, ['kelime testi', 'kelime quiz'])) {
     return getVocabularyQuiz();
   }
 
-  if (normalized.includes('gunluk gorev') || normalized.includes('günlük görev')) {
+  if (containsAny(normalized, ['gunluk gorev'])) {
     if (dailyTasks.length === 0) {
       dailyTasks = createDailyTasks(loadProfile());
       saveDailyTasks(dailyTasks);
@@ -837,23 +837,23 @@ function getSmartResponse(message) {
     return markDailyTaskDone(index);
   }
 
-  if (normalized.includes('gorev sifirla') || normalized.includes('görev sıfırla')) {
+  if (containsAny(normalized, ['gorev sifirla'])) {
     return resetDailyTasks(loadProfile());
   }
 
-  if (normalized.includes('ilerleme ozeti') || normalized.includes('ilerleme özeti')) {
+  if (containsAny(normalized, ['ilerleme ozeti'])) {
     return createProgressSummaryCard();
   }
 
-  if (normalized.includes('siradaki oneri') || normalized.includes('sıradaki öneri') || normalized.includes('ne yapayim') || normalized.includes('ne yapayım')) {
+  if (containsAny(normalized, ['siradaki oneri', 'ne yapayim'])) {
     return createNextActionCard();
   }
 
-  if (normalized.includes('gunu kapat') || normalized.includes('günü kapat')) {
+  if (containsAny(normalized, ['gunu kapat'])) {
     return closeDayProgress();
   }
 
-  if (normalized.includes('cevabi goster') || normalized.includes('quiz cevabi')) {
+  if (containsAny(normalized, ['cevabi goster', 'quiz cevabi'])) {
     return lastQuizAnswer
       ? `<p><strong>${lastQuizAnswer}</strong></p><p class="muted">İstersen bir sonraki seviyeye geçelim.</p>`
       : '<p class="muted">Önce bir ders veya kelime testi açalım, sonra cevabı gösterebilirim.</p>';

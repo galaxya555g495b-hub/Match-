@@ -145,6 +145,14 @@ const professionModules = {
 const SESSION_KEY = 'match_profile';
 let lastQuizAnswer = '';
 
+const aiState = {
+  memory: {
+    currentTopic: '',
+    currentTrack: '',
+    lastPlan: '',
+  },
+};
+
 const scopeChips = document.getElementById('scopeChips');
 const profileForm = document.getElementById('profileForm');
 const chatArea = document.getElementById('chatArea');
@@ -219,8 +227,44 @@ function listTopicsCard(title, items) {
   return `<p><strong>${title}</strong></p><ul>${list}</ul><p class="muted">Birini yaz ve hemen öğretime başlayalım.</p>`;
 }
 
+function scoreIntent(input, key) {
+  const normalizedInput = input.toLowerCase();
+  const normalizedKey = key.toLowerCase();
+
+  if (normalizedInput.includes(normalizedKey)) return 1;
+
+  const inputTokens = normalizedInput.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  const keyTokens = normalizedKey.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+
+  if (!inputTokens.length || !keyTokens.length) return 0;
+
+  const matchedTokens = keyTokens.filter((token) => inputTokens.some((inputToken) => inputToken.startsWith(token.slice(0, 4))));
+  return matchedTokens.length / keyTokens.length;
+}
+
+function findBestMatch(input, modules) {
+  return Object.keys(modules)
+    .map((key) => ({ key, score: scoreIntent(input, key) }))
+    .sort((a, b) => b.score - a.score)[0];
+}
+
+function createAdaptiveTip(profile, topic) {
+  if (!profile) return 'İpucu: Konuyu 25 dakika odak + 5 dakika tekrar şeklinde çalış.';
+
+  const studyTime = Number.parseInt(profile.studyTime, 10);
+  const focusWindow = Number.isFinite(studyTime) && studyTime > 0 ? Math.max(15, Math.min(studyTime, 45)) : 25;
+  const weakCourse = profile.struggles.toLowerCase();
+
+  if (weakCourse.includes(topic)) {
+    return `İpucu: ${focusWindow} dakikalık ana oturumdan sonra 10 soru çözerek ${topic} konusunu pekiştir.`;
+  }
+
+  return `İpucu: ${focusWindow} dakika konu + 10 dakika özet çıkarma yöntemiyle ilerle.`;
+}
+
 function getSmartResponse(message) {
   const lower = message.toLowerCase();
+  const activeProfile = loadProfile();
 
   if (lower.includes('dersleri listele') || lower.includes('ders listesi')) {
     return listTopicsCard('Öğretebildiğim Dersler', Object.keys(lessonModules));
@@ -236,14 +280,45 @@ function getSmartResponse(message) {
       : '<p class="muted">Önce bir ders açalım, sonra quiz cevabını gösterebilirim.</p>';
   }
 
-  const lessonKey = Object.keys(lessonModules).find((key) => lower.includes(key));
-  if (lessonKey) {
-    return formatLessonCard(lessonModules[lessonKey]);
+  const lessonMatch = findBestMatch(lower, lessonModules);
+  if (lessonMatch?.score >= 0.5) {
+    const lesson = lessonModules[lessonMatch.key];
+    aiState.memory.currentTopic = lessonMatch.key;
+    aiState.memory.currentTrack = 'lesson';
+    return `${formatLessonCard(lesson)}<p class="muted">${createAdaptiveTip(activeProfile, lessonMatch.key)}</p>`;
   }
 
-  const professionKey = Object.keys(professionModules).find((key) => lower.includes(key));
-  if (professionKey) {
-    return formatProfessionCard(professionModules[professionKey]);
+  const professionMatch = findBestMatch(lower, professionModules);
+  if (professionMatch?.score >= 0.5) {
+    const profession = professionModules[professionMatch.key];
+    aiState.memory.currentTopic = professionMatch.key;
+    aiState.memory.currentTrack = 'profession';
+    return `${formatProfessionCard(profession)}<p class="muted">İstersen bu alana özel 1 haftalık başlangıç planı da çıkarabilirim.</p>`;
+  }
+
+  if (lower.includes('haftalık plan') || lower.includes('çalışma planı')) {
+    const profile = activeProfile;
+
+    if (!profile) {
+      return '<p class="muted">Önce profil bilgilerini girersen sana uygun haftalık plan hazırlayabilirim.</p>';
+    }
+
+    const topic = aiState.memory.currentTopic || profile.struggles.split(',')[0].trim();
+    const dailyMinutes = Number.parseInt(profile.studyTime, 10) || 30;
+    const plan = `
+      <p><strong>${topic} için 7 günlük mini plan</strong></p>
+      <ul>
+        <li>Pazartesi: ${dailyMinutes} dk konu anlatımı + 10 dk tekrar</li>
+        <li>Salı: ${dailyMinutes} dk örnek soru çözümü</li>
+        <li>Çarşamba: ${dailyMinutes} dk mini quiz + yanlış analizi</li>
+        <li>Perşembe: ${dailyMinutes} dk eksik konu tamamlama</li>
+        <li>Cuma: ${dailyMinutes} dk karışık test</li>
+        <li>Cumartesi: ${dailyMinutes + 10} dk deneme</li>
+        <li>Pazar: 20 dk genel tekrar + hedef değerlendirme</li>
+      </ul>
+    `;
+    aiState.memory.lastPlan = topic;
+    return plan;
   }
 
   return `
@@ -258,6 +333,7 @@ function createAssistantPlan(profile) {
     <p><strong>Harika ${profile.name}, profilini kaydettim ✅</strong></p>
     <p>${profile.grade} seviyesi ve <strong>${profile.struggles}</strong> derslerine göre seni çalıştıracağım.</p>
     <p class="muted">Now we continue teaching mode: subjects + professions with bilingual support.</p>
+    <p class="muted">Yeni komut: <strong>haftalık plan oluştur</strong></p>
   `;
 }
 
